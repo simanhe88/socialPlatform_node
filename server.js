@@ -2,8 +2,8 @@ var http = require('http');
 var ports = [8888,8889];
 var servers = [];
 function start(route, handle){
-  function onRequest(request, response){
-    route(handle, request, response);
+  function onRequest(req, res){
+    route(handle, req, res);
   }
   var s;
   ports.forEach(function(port){
