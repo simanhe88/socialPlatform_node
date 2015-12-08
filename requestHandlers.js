@@ -1,6 +1,9 @@
 var querystring = require("querystring");
 var fs = require("fs");
 var formidable = require('formidable');
+var url = require('url');
+var util = require('util');
+var path = require('path');
 
 function start(request, response){
   console.log("Request handler 'start' was called.");
@@ -40,10 +43,16 @@ function upload(req, res){
     var form =new formidable.IncomingForm();
     console.log("about to parse");
     form.parse(req,function(err, fields, files){
-      fs.renameSync(files.upload.path,"D:/temp.jpg");
+      //fs.renameSync(files.upload.path,"D:/temp.jpg");
+    	var readStream = fs.createReadStream(files.upload.path);
+    	var tempFileFullName = "D:/"+files.upload.name;
+      var writeStream = fs.createWriteStream(tempFileFullName);
+      util.pump(readStream, writeStream, function() {
+        fs.unlinkSync(files.upload.path);
+      });
       res.writeHead(200,{"Content-Type":"text/html"});
       res.write("received image:<br/>");
-      res.write("<img src='/show' />");
+      res.write("<img src='/show?filename="+tempFileFullName+"' />");
       res.end();
   });
   console.log('Request url: ' + req.url);
@@ -53,13 +62,15 @@ function upload(req, res){
 
 function show(req, res){
   console.log("Request handler 'show' was called.");
-  fs.readFile("D:/temp.jpg","binary", function(error, file){
+  var filename = url.parse(req.url,true).query.filename;
+  var extname = path.extname(filename).substring(1);
+  fs.readFile(filename,"binary", function(error, file){
       if(error){
         res.writeHead(500,{"Content-Type":"text/plain"});
         res.write(error +"\n");
         res.end();
       }else{
-      	res.writeHead(200,{"Content-Type":"image/jpg"});
+      	res.writeHead(200,{"Content-Type":"image/"+extname});
       	res.write(file,"binary");
       	res.end();
       }
