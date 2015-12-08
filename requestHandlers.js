@@ -1,4 +1,6 @@
 var querystring = require("querystring");
+var fs = require("fs");
+var formidable = require('formidable');
 
 function start(request, response){
   console.log("Request handler 'start' was called.");
@@ -6,13 +8,12 @@ function start(request, response){
   console.log('Request url: ' + request.url);
   var body ='<html>'+
 	  '<head>'+
-	  '<meta http-equiv="Content-Type" content="text/html; '+
-	  'charset=UTF-8" />'+
+	  '<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />'+
 	  '</head>'+
 	  '<body>'+
-	  '<form action="/upload" method="post">'+
-	  '<textarea name="text" rows="20" cols="60"></textarea>'+
-	  '<input type="submit" value="Submit text" />'+
+	  '<form action="/upload" enctype="multipart/form-data" method="post">'+
+	  '<input type="file" name="upload">'+ 
+	  '<input type="submit" value="Upload file" />'+
 	  '</form>'+
 	  '</body>'+
 	  '</html>';
@@ -24,21 +25,46 @@ function start(request, response){
 
 function upload(req, res){
   console.log("Request handler 'upload' was called.");
-  var postData = "";
-  req.setEncoding("utf8");
-  req.addListener("data",function(postDataChunk){
-    postData += postDataChunk;
-    console.log("Received POST data chunk '" + postDataChunk +"'.");
+//  var postData = "";
+//  req.setEncoding("utf8");
+//  req.addListener("data",function(postDataChunk){
+//    postData += postDataChunk;
+//    console.log("Received POST data chunk '" + postDataChunk +"'.");
+//  });
+//    
+//  req.addListener("end",function(){
+//    res.writeHead(200, {'Content-Type':'text/plain'});
+//    res.write("You've sent the text: " + querystring.parse(postData).text);
+//    res.end();
+//  });
+    var form =new formidable.IncomingForm();
+    console.log("about to parse");
+    form.parse(req,function(err, fields, files){
+      fs.renameSync(files.upload.path,"D:/temp.jpg");
+      res.writeHead(200,{"Content-Type":"text/html"});
+      res.write("received image:<br/>");
+      res.write("<img src='/show' />");
+      res.end();
   });
-    
-  req.addListener("end",function(){
-    res.writeHead(200, {'Content-Type':'text/plain'});
-    res.write("You've sent the text: " + querystring.parse(postData).text);
-    res.end();
-  });
-  
   console.log('Request url: ' + req.url);
   
+}
+
+
+function show(req, res){
+  console.log("Request handler 'show' was called.");
+  fs.readFile("D:/temp.jpg","binary", function(error, file){
+      if(error){
+        res.writeHead(500,{"Content-Type":"text/plain"});
+        res.write(error +"\n");
+        res.end();
+      }else{
+      	res.writeHead(200,{"Content-Type":"image/jpg"});
+      	res.write(file,"binary");
+      	res.end();
+      }
+    }
+  );
 }
 
 function favicon(request, response){
@@ -55,3 +81,6 @@ function default404(request, response){
 
 exports.start = start;
 exports.upload = upload;
+exports.show = show;
+exports.favicon = favicon;
+exports.default404 = default404;

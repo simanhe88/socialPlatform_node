@@ -6,6 +6,7 @@ var handle = {};
 handle['/'] = requestHandlers.start;
 handle["/start"] = requestHandlers.start;
 handle["/upload"] = requestHandlers.upload;
+handle["/show"] = requestHandlers.show;
 handle['/favicon.ico'] = requestHandlers.favicon;
-
+handle['404'] = requestHandlers.default404;
 server.start(router.route, handle);
